@@ -73,7 +73,7 @@ class Car:
         c_rotate = numpy.ctypeslib.as_ctypes(rot_y)
 
         glUniformMatrix4fv(self.rotate_loc, 1, GL_FALSE, c_rotate)
-        # glUniformMatrix4fv(self.light_loc, 1, GL_FALSE, c_rotate)
+        glUniformMatrix4fv(self.light_loc, 1, GL_FALSE, c_rotate)
 
 
 class MyWindow(pyglet.window.Window):
@@ -91,17 +91,26 @@ class MyWindow(pyglet.window.Window):
             bytesize=serial.EIGHTBITS,
             timeout=0xFFFF)
 
-
         self.car = Car()
 
     def on_draw(self):
         self.clear()
         line = self.ser.readline()
         line = line.rstrip(b'\r\n')
-        elements = line.decode("utf-8").split(';')
-        if elements.__len__() == 5:
-            [w, i, k, j, t] = elements
-            self.car.rotate(float(w), -float(i), -float(j), float(k))
+        try:
+            elements = line.decode("utf-8").split(';')
+            if elements.__len__() == 5:
+                try:
+                    [w, i, k, j, t] = elements
+                    w = float(w)
+                    i = float(i)
+                    j = float(j)
+                    k = float(k)
+                    self.car.rotate(float(w), -float(i), -float(j), float(k))
+                except ValueError:
+                    pass
+        except UnicodeDecodeError:
+            pass
 
         self.car.verts.draw(GL_TRIANGLES)
 
@@ -113,9 +122,10 @@ class MyWindow(pyglet.window.Window):
 
     def on_close(self):
         self.ser.close()
-    
+
     def on_mouse_scroll(self, x, y, scroll_x, scroll_y):
         self.set_fullscreen(False)
+
 
 if __name__ == "__main__":
     window = MyWindow(1280, 720, "Attitude Estimation", resizable=True)
